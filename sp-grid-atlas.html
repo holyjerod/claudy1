@@ -258,9 +258,8 @@ const MAX_STOPS = 5;
 const BASEMAPS = {
   dark: {label:"Dark",  url:"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"},
   light:{label:"Light", url:"https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"},
-  grey: {label:"Grey",  url:"https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"},
 };
-const BASEMAP_ORDER = ["dark","light","grey"];
+const BASEMAP_ORDER = ["dark","light"];
 
 // Tiles come from an external CDN. Corporate networks and sandboxed viewers often
 // block it, which would otherwise leave a blank map, so failures are reported back
