@@ -5,17 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>SP Grid Atlas — 6.6KV/LV Substations</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.min.css"/>
 <style>
   :root{
-    --bg:#0e1420; --panel:#151d2b; --panel2:#1b2536; --line:#25324a;
-    --ink:#e8eef7; --ink-dim:#93a2bd; --ink-faint:#5f6f8c;
-    --accent:#38bdf8; --accent-ink:#04121d;
+    --bg:#f5f5f7; --panel:#ffffff; --panel2:#f5f5f7; --line:#d2d2d7;
+    --ink:#1d1d1f; --ink-dim:#6e6e73; --ink-faint:#86868b;
+    --accent:#e8002d; --accent-ink:#ffffff;
     --z-central:#818cf8; --z-east:#fbbf24; --z-ne:#34d399;
     --z-north:#f472b6; --z-west:#60a5fa; --z-south:#fb7185;
-    --font-d:'Space Grotesk',sans-serif; --font-b:'IBM Plex Sans',sans-serif; --font-m:'IBM Plex Mono',monospace;
+    --shadow:0 1px 3px rgba(0,0,0,.08);
+    --font-b:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+    --font-d:var(--font-b);
+    --font-m:'SF Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body,#root{height:100%}
@@ -24,167 +26,204 @@
   @media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.rail{max-height:46vh}}
 
   .rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
-  .brand{padding:18px 20px 14px;border-bottom:1px solid var(--line)}
-  .brand h1{font-family:var(--font-d);font-size:19px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
-  .brand .sub{font-size:12px;color:var(--ink-dim);margin-top:4px;font-family:var(--font-m)}
-  .stat{display:flex;gap:16px;margin-top:12px}
-  .stat b{font-family:var(--font-d);font-size:20px;font-weight:600;display:block;line-height:1}
-  .stat span{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em}
+  .brand{padding:24px 20px 20px;border-bottom:1px solid var(--line)}
+  .brand h1{font-family:var(--font-d);font-size:21px;font-weight:600;letter-spacing:-.021em;line-height:1.15}
+  .brand .sub{font-size:13px;color:var(--ink-dim);margin-top:5px;line-height:1.4}
+  .stat{display:flex;gap:22px;margin-top:18px}
+  .stat b{font-family:var(--font-d);font-size:22px;font-weight:600;display:block;line-height:1;letter-spacing:-.02em}
+  .stat span{font-size:12px;color:var(--ink-faint);display:block;margin-top:5px}
 
-  .controls{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .controls{padding:16px 20px;border-bottom:1px solid var(--line)}
   .search{position:relative}
-  .search input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;
-    padding:10px 12px 10px 36px;color:var(--ink);font-family:var(--font-b);font-size:14px;outline:none}
-  .search input:focus{border-color:var(--accent)}
-  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-faint)}
-  .row{display:flex;gap:8px;margin-top:10px;align-items:center}
-  .row label{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em}
-  select{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);
-    padding:7px 9px;font-family:var(--font-b);font-size:13px;outline:none;cursor:pointer}
+  .search input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    padding:11px 14px 11px 38px;color:var(--ink);font-family:var(--font-b);font-size:14px;outline:none;
+    transition:border-color .15s,box-shadow .15s}
+  .search input::placeholder{color:var(--ink-faint)}
+  .search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,0,45,.1)}
+  .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--ink-faint)}
+  .row{display:flex;gap:10px;margin-top:12px;align-items:center}
+  .row label{font-size:13px;color:var(--ink-dim)}
+  select{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:12px;color:var(--ink);
+    padding:9px 11px;font-family:var(--font-b);font-size:13px;outline:none;cursor:pointer}
   select:focus{border-color:var(--accent)}
 
-  .zones{padding:12px 16px;border-bottom:1px solid var(--line)}
-  .zones .hd{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}
-  .zgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-  .zbtn{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);
-    border-radius:8px;padding:8px 10px;cursor:pointer;color:var(--ink);font-family:var(--font-b);font-size:13px;
-    transition:border-color .12s,background .12s;text-align:left}
-  .zbtn:hover{border-color:var(--ink-faint)}
+  .zones{padding:16px 20px;border-bottom:1px solid var(--line)}
+  .zones .hd{font-size:13px;color:var(--ink-dim);margin-bottom:11px}
+  .zgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .zbtn{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:9px 11px;cursor:pointer;color:var(--ink);font-family:var(--font-b);font-size:13px;
+    transition:background .15s,border-color .15s;text-align:left}
+  .zbtn:hover{background:var(--panel2)}
   .zbtn.off{opacity:.4}
   .zbtn .dot{width:10px;height:10px;border-radius:50%;flex:none}
   .zbtn .zn{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .zbtn .zc{font-family:var(--font-m);font-size:11px;color:var(--ink-dim)}
-  .zall{display:flex;gap:8px;margin-top:8px}
-  .zall button{flex:1;background:transparent;border:1px solid var(--line);border-radius:7px;color:var(--ink-dim);
-    padding:6px;font-size:12px;font-family:var(--font-b);cursor:pointer}
-  .zall button:hover{color:var(--ink);border-color:var(--ink-faint)}
+  .zbtn .zc{font-family:var(--font-m);font-size:11px;color:var(--ink-faint)}
+  .zall{display:flex;gap:8px;margin-top:10px}
+  .zall button{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:980px;color:var(--ink-dim);
+    padding:8px;font-size:13px;font-family:var(--font-b);cursor:pointer;transition:background .15s,color .15s}
+  .zall button:hover{color:var(--ink);background:var(--panel2)}
+
+  .cluster{padding:16px 20px;border-bottom:1px solid var(--line)}
+  .cl-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+    background:var(--panel);border:1px solid var(--line);border-radius:980px;color:var(--ink);
+    font-family:var(--font-b);font-size:14px;font-weight:500;padding:11px;cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s}
+  .cl-btn:hover:not(:disabled):not(.on){background:var(--panel2)}
+  .cl-btn.on:hover{opacity:.88}
+  .cl-btn:disabled{opacity:.4;cursor:not-allowed}
+  .cl-btn .st{font-size:12px;font-weight:400;color:var(--ink-faint);border:1px solid var(--line);
+    border-radius:980px;padding:1px 9px}
+  .cl-btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .cl-btn.on .st{color:var(--accent-ink);border-color:rgba(255,255,255,.55)}
 
   .list{flex:1;overflow-y:auto;min-height:0}
-  .list::-webkit-scrollbar{width:9px}
-  .list::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
-  .item{padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:11px;align-items:center;transition:background .1s}
+  .list::-webkit-scrollbar{width:10px}
+  .list::-webkit-scrollbar-thumb{background:#c7c7cc;border-radius:6px;border:3px solid var(--panel);background-clip:padding-box}
+  .item{padding:13px 20px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:12px;align-items:center;transition:background .12s}
   .item:hover{background:var(--panel2)}
   .item.active{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
   .item .dot{width:9px;height:9px;border-radius:50%;flex:none}
-  .item .nm{flex:1;font-size:13.5px;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .item .zg{font-family:var(--font-m);font-size:10.5px;color:var(--ink-faint)}
-  .empty{padding:34px 20px;text-align:center;color:var(--ink-faint);font-size:13px;line-height:1.6}
+  .item .nm{flex:1;font-size:14px;font-weight:500;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .zg{font-size:12px;color:var(--ink-faint)}
+  .empty{padding:40px 24px;text-align:center;color:var(--ink-faint);font-size:14px;line-height:1.6}
 
   .stage{position:relative;min-height:0}
-  #map{position:absolute;inset:0;background:#0b1119}
-  .leaflet-container{background:#0b1119;font-family:var(--font-b)}
-  .leaflet-popup-content-wrapper{background:var(--panel2);color:var(--ink);border-radius:11px;border:1px solid var(--line);box-shadow:0 12px 30px rgba(0,0,0,.5)}
-  .leaflet-popup-tip{background:var(--panel2);border:1px solid var(--line)}
-  .leaflet-popup-content{margin:13px 15px;font-family:var(--font-b)}
-  .pop h3{font-family:var(--font-d);font-size:15px;margin-bottom:7px}
-  .pop .prow{display:flex;justify-content:space-between;gap:20px;font-size:12.5px;padding:3px 0;border-top:1px solid var(--line)}
+  #map{position:absolute;inset:0;background:var(--bg)}
+  .leaflet-container{background:var(--bg);font-family:var(--font-b)}
+  .leaflet-bar{border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+  .leaflet-bar a{background:var(--panel);color:var(--ink);border-bottom-color:var(--line)}
+  .leaflet-bar a:hover{background:var(--panel2);color:var(--ink)}
+  .leaflet-control-attribution{background:rgba(255,255,255,.85)!important;color:var(--ink-faint);
+    border-radius:8px 0 0 0;font-size:11px}
+  .leaflet-control-attribution a{color:var(--ink-dim)}
+  .leaflet-popup-content-wrapper{background:var(--panel);color:var(--ink);border-radius:12px;
+    border:1px solid var(--line);box-shadow:0 4px 18px rgba(0,0,0,.12)}
+  .leaflet-popup-tip{background:var(--panel);border:1px solid var(--line)}
+  .leaflet-popup-content{margin:16px 18px;font-family:var(--font-b)}
+  .pop h3{font-family:var(--font-d);font-size:16px;font-weight:600;letter-spacing:-.01em;margin-bottom:10px}
+  .pop .prow{display:flex;justify-content:space-between;gap:24px;font-size:13px;padding:5px 0;border-top:1px solid var(--line)}
   .pop .prow span{color:var(--ink-dim)}
   .pop .prow b{font-family:var(--font-m);font-weight:500}
-  .pop .zbadge{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px}
+  .pop .zbadge{display:inline-flex;align-items:center;gap:7px;margin-top:10px;font-size:13px;color:var(--ink-dim)}
   .pop .zbadge .dot{width:9px;height:9px;border-radius:50%}
-  .gmaps{display:block;margin-top:10px;text-align:center;background:var(--accent);color:var(--accent-ink);
-    text-decoration:none;font-weight:600;font-size:12.5px;padding:7px;border-radius:7px;font-family:var(--font-b)}
+  .leaflet-container a.gmaps{display:block;margin-top:14px;text-align:center;background:var(--accent);
+    color:var(--accent-ink);text-decoration:none;font-weight:500;font-size:13px;padding:9px;
+    border-radius:980px;font-family:var(--font-b)}
+  .leaflet-container a.gmaps:hover{opacity:.88}
 
-  .legend{position:absolute;right:12px;bottom:12px;z-index:500;background:rgba(21,29,43,.92);
-    backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:12px}
-  .legend .lt{font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
-  .legend .lr{display:flex;align-items:center;gap:8px;padding:2px 0;color:var(--ink-dim)}
+  .legend{position:absolute;right:16px;bottom:24px;z-index:500;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    font-size:13px;box-shadow:var(--shadow)}
+  .legend .lt{font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px}
+  .legend .lr{display:flex;align-items:center;gap:9px;padding:3px 0;color:var(--ink-dim)}
   .legend .lr .dot{width:9px;height:9px;border-radius:50%}
-  .counter{position:absolute;left:12px;top:12px;z-index:500;background:rgba(21,29,43,.92);backdrop-filter:blur(8px);
-    border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-family:var(--font-m);font-size:12px;color:var(--ink-dim)}
-  .counter b{color:var(--ink);font-weight:500}
+  .counter{position:absolute;left:16px;top:92px;z-index:500;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:12px;padding:9px 14px;
+    font-size:13px;color:var(--ink-dim);box-shadow:var(--shadow)}
+  .counter b{color:var(--ink);font-weight:600}
+
+  .basemap{position:absolute;right:16px;top:16px;z-index:500;display:flex;gap:5px;padding:5px;
+    background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border:1px solid var(--line);
+    border-radius:10px;box-shadow:var(--shadow)}
+  .basemap button{background:var(--panel);border:1px solid var(--line);border-radius:980px;padding:6px 15px;
+    font-family:var(--font-b);font-size:12.5px;color:var(--ink-dim);cursor:pointer;transition:.15s}
+  .basemap button:hover{color:var(--ink);background:var(--panel2)}
+  .basemap button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+  .cl-icon{width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--accent-ink);
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-b);font-size:13px;
+    font-weight:600;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 
   /* ── Route Planner ───────────────────────────────────────── */
-  .plan{padding:13px 16px 0}
+  .plan{padding:16px 20px 0}
   .plan-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;
-    background:linear-gradient(180deg,#202b40,#1a2334);border:1px solid var(--line);border-radius:11px;
-    color:var(--ink);font-family:var(--font-b);font-size:13.5px;font-weight:600;padding:11px;cursor:pointer;
-    transition:border-color .15s,box-shadow .15s,transform .1s}
-  .plan-btn:hover{border-color:var(--accent);box-shadow:0 5px 18px rgba(56,189,248,.13)}
-  .plan-btn:active{transform:scale(.985)}
-  .plan-btn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+    background:var(--accent);border:1px solid var(--accent);border-radius:980px;color:var(--accent-ink);
+    font-family:var(--font-b);font-size:14px;font-weight:500;padding:11px;cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s,opacity .15s}
+  .plan-btn:hover{opacity:.88}
+  .plan-btn.on{background:var(--panel);border-color:var(--line);color:var(--ink)}
+  .plan-btn.on:hover{background:var(--panel2);opacity:1}
 
   .rp{display:flex;flex-direction:column;flex:1;min-height:0}
   .rp-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;
-    padding:14px 16px 12px;border-bottom:1px solid var(--line)}
-  .rp-hd h2{font-family:var(--font-d);font-size:16px;font-weight:600;letter-spacing:-.01em}
+    padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+  .rp-hd h2{font-family:var(--font-d);font-size:17px;font-weight:600;letter-spacing:-.015em}
   .rp-x{width:28px;height:28px;flex:none;display:flex;align-items:center;justify-content:center;
-    background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--ink-dim);
-    font-size:17px;line-height:1;cursor:pointer;transition:.15s}
-  .rp-x:hover{color:var(--ink);border-color:var(--ink-faint)}
+    background:var(--panel);border:1px solid var(--line);border-radius:50%;color:var(--ink-dim);
+    font-size:16px;line-height:1;cursor:pointer;transition:.15s}
+  .rp-x:hover{color:var(--ink);background:var(--panel2)}
 
-  .rp-body{flex:1;min-height:0;overflow-y:auto;padding:14px 16px 16px}
-  .rp-body::-webkit-scrollbar{width:9px}
-  .rp-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
+  .rp-body{flex:1;min-height:0;overflow-y:auto;padding:16px 20px 20px}
+  .rp-body::-webkit-scrollbar{width:10px}
+  .rp-body::-webkit-scrollbar-thumb{background:#c7c7cc;border-radius:6px;border:3px solid var(--panel);background-clip:padding-box}
 
-  .rp-hq{display:flex;align-items:center;gap:11px;background:var(--panel2);
-    border:1px solid var(--line);border-radius:12px;padding:11px 12px}
-  .rp-hq .sq{width:24px;height:24px;flex:none;border-radius:7px;background:var(--accent);color:var(--accent-ink);
-    display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:9.5px;font-weight:700}
+  .rp-hq{display:flex;align-items:center;gap:12px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .rp-hq .sq{width:26px;height:26px;flex:none;border-radius:7px;background:var(--accent);color:var(--accent-ink);
+    display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;letter-spacing:.02em}
   .rp-hq .tx{flex:1;min-width:0;display:block}
-  .rp-hq .nm{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .rp-hq .ad{display:block;font-family:var(--font-m);font-size:10.5px;color:var(--ink-faint);margin-top:3px;
+  .rp-hq .nm{display:block;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rp-hq .ad{display:block;font-size:11.5px;color:var(--ink-faint);margin-top:3px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .rp-hq .tag{flex:none;font-family:var(--font-m);font-size:9.5px;color:var(--accent);
-    text-transform:uppercase;letter-spacing:.06em;border:1px solid rgba(56,189,248,.35);
-    border-radius:6px;padding:3px 6px}
+  .rp-hq .tag{flex:none;font-size:11px;color:var(--accent);border:1px solid rgba(232,0,45,.3);
+    border-radius:980px;padding:3px 9px;white-space:nowrap}
 
-  .rp-count{display:flex;align-items:center;justify-content:space-between;margin-top:14px;
-    font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em}
-  .rp-count b{font-family:var(--font-m);font-size:12px;color:var(--ink);font-weight:500;letter-spacing:0}
+  .rp-count{display:flex;align-items:center;justify-content:space-between;margin-top:18px;
+    font-size:13px;color:var(--ink-dim)}
+  .rp-count b{font-size:13px;color:var(--ink);font-weight:600}
 
-  .rp-search{position:relative;margin-top:9px}
-  .rp-search input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
-    padding:10px 12px;color:var(--ink);font-family:var(--font-b);font-size:13.5px;outline:none;transition:border-color .15s}
-  .rp-search input:focus{border-color:var(--accent)}
-  .rp-search input:disabled{opacity:.5;cursor:not-allowed}
-  .rp-drop{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;max-height:224px;overflow-y:auto;
-    background:var(--panel2);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 44px rgba(0,0,0,.6)}
-  .rp-drop::-webkit-scrollbar{width:9px}
-  .rp-drop::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
-  .rp-drop .r{display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;
-    border-bottom:1px solid var(--line);transition:background .1s}
+  .rp-search{position:relative;margin-top:10px}
+  .rp-search input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    padding:11px 14px;color:var(--ink);font-family:var(--font-b);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s}
+  .rp-search input::placeholder{color:var(--ink-faint)}
+  .rp-search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,0,45,.1)}
+  .rp-search input:disabled{opacity:.6;cursor:not-allowed;background:var(--panel2)}
+  .rp-drop{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;max-height:228px;overflow-y:auto;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.14)}
+  .rp-drop::-webkit-scrollbar{width:10px}
+  .rp-drop::-webkit-scrollbar-thumb{background:#c7c7cc;border-radius:6px;border:3px solid var(--panel);background-clip:padding-box}
+  .rp-drop .r{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;
+    border-bottom:1px solid var(--line);transition:background .12s}
   .rp-drop .r:last-child{border-bottom:none}
-  .rp-drop .r:hover{background:var(--panel)}
+  .rp-drop .r:hover{background:var(--panel2)}
   .rp-drop .r .dot{width:9px;height:9px;border-radius:50%;flex:none}
-  .rp-drop .r .nm{flex:1;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .rp-drop .r .zg{font-family:var(--font-m);font-size:10px;color:var(--ink-faint)}
-  .rp-none{padding:12px;text-align:center;font-size:12.5px;color:var(--ink-faint)}
+  .rp-drop .r .nm{flex:1;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rp-drop .r .zg{font-size:11.5px;color:var(--ink-faint)}
+  .rp-none{padding:14px;text-align:center;font-size:13px;color:var(--ink-faint)}
 
-  .rp-stops{display:flex;flex-direction:column;gap:7px;margin-top:12px}
-  .rp-stop{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
-    border-radius:12px;padding:9px 10px}
-  .rp-stop .bg{width:24px;height:24px;flex:none;border-radius:50%;color:#0b1119;display:flex;
-    align-items:center;justify-content:center;font-family:var(--font-d);font-size:12px;font-weight:700}
-  .rp-stop .nm{flex:1;min-width:0;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .rp-stop .zg{flex:none;font-family:var(--font-m);font-size:10px;color:var(--ink-faint)}
+  .rp-stops{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+  .rp-stop{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:10px 12px}
+  .rp-stop .bg{width:24px;height:24px;flex:none;border-radius:50%;color:#1d1d1f;display:flex;
+    align-items:center;justify-content:center;font-size:12px;font-weight:600}
+  .rp-stop .nm{flex:1;min-width:0;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rp-stop .zg{flex:none;font-size:11.5px;color:var(--ink-faint)}
   .rp-rm{flex:none;background:transparent;border:none;color:var(--ink-faint);cursor:pointer;
     font-size:16px;line-height:1;padding:2px 3px;transition:color .15s}
-  .rp-rm:hover{color:var(--z-south)}
-  @keyframes rpflash{0%{background:rgba(56,189,248,.3);border-color:var(--accent);transform:translateX(5px)}
-    100%{background:var(--panel2);border-color:var(--line);transform:none}}
+  .rp-rm:hover{color:var(--accent)}
+  @keyframes rpflash{0%{background:rgba(232,0,45,.12);border-color:var(--accent);transform:translateX(5px)}
+    100%{background:var(--panel);border-color:var(--line);transform:none}}
   .rp-stop.flash{animation:rpflash .7s ease-out}
-  .rp-hint{margin-top:12px;padding:20px 14px;text-align:center;border:1px dashed var(--line);
-    border-radius:12px;color:var(--ink-faint);font-size:12.5px;line-height:1.6}
+  .rp-hint{margin-top:14px;padding:24px 16px;text-align:center;border:1px dashed var(--line);
+    border-radius:12px;color:var(--ink-faint);font-size:13px;line-height:1.6}
 
-  .rp-act{display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
-  .rp-btn{width:100%;border-radius:10px;padding:11px;border:1px solid var(--line);cursor:pointer;
-    font-family:var(--font-b);font-size:13.5px;font-weight:600;transition:border-color .15s,box-shadow .15s,transform .1s}
-  .rp-btn:active:not(:disabled){transform:scale(.985)}
-  .rp-btn:disabled{opacity:.34;cursor:not-allowed}
+  .rp-act{display:flex;flex-direction:column;gap:9px;padding:16px 20px;border-top:1px solid var(--line)}
+  .rp-btn{width:100%;border-radius:980px;padding:11px;border:1px solid var(--line);cursor:pointer;
+    font-family:var(--font-b);font-size:14px;font-weight:500;transition:background .15s,opacity .15s,color .15s}
+  .rp-btn:disabled{opacity:.36;cursor:not-allowed}
   .rp-btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-  .rp-btn.primary:hover:not(:disabled){box-shadow:0 5px 18px rgba(56,189,248,.22)}
-  .rp-btn.ghost{background:var(--panel2);color:var(--ink)}
-  .rp-btn.ghost:hover:not(:disabled){border-color:var(--ink-faint)}
-  .rp-btn.quiet{background:transparent;color:var(--ink-dim)}
-  .rp-btn.quiet:hover:not(:disabled){color:var(--ink);border-color:var(--ink-faint)}
+  .rp-btn.primary:hover:not(:disabled){opacity:.88}
+  .rp-btn.ghost{background:var(--panel);color:var(--ink)}
+  .rp-btn.ghost:hover:not(:disabled){background:var(--panel2)}
+  .rp-btn.quiet{background:transparent;border-color:transparent;color:var(--ink-dim)}
+  .rp-btn.quiet:hover:not(:disabled){color:var(--ink);background:var(--panel2)}
 
-  .rp-hq-icon{width:26px;height:26px;border-radius:7px;background:#f4f8ff;color:#04121d;
+  .rp-hq-icon{width:28px;height:28px;border-radius:8px;background:#fff;color:var(--accent);
     border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;
-    font-family:var(--font-d);font-size:9.5px;font-weight:700;box-shadow:0 3px 11px rgba(0,0,0,.55)}
-  .rp-num-icon{width:24px;height:24px;border-radius:50%;color:#0b1119;border:2px solid rgba(255,255,255,.92);
-    display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:12px;
-    font-weight:700;box-shadow:0 3px 11px rgba(0,0,0,.55)}
+    font-family:var(--font-b);font-size:9.5px;font-weight:700;box-shadow:0 1px 5px rgba(0,0,0,.25)}
+  .rp-num-icon{width:26px;height:26px;border-radius:50%;color:#1d1d1f;border:2.5px solid #fff;
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-b);font-size:12px;
+    font-weight:700;box-shadow:0 1px 5px rgba(0,0,0,.28)}
 </style>
 </head>
 <body>
@@ -193,6 +232,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script>window.SUBSTATIONS = [{"name":"173 SUNBIRD RD","lat":1.338592652,"lng":103.9564287,"voltage":"6.6KV/LV","zone":"East"},{"name":"21 ROSYTH RD","lat":1.362955572,"lng":103.8762825,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"AH HOOD RD 5 STOREY FLAT","lat":1.327600376,"lng":103.8448365,"voltage":"6.6KV/LV","zone":"Central"},{"name":"ARDISIA GDN","lat":1.347701828,"lng":103.8773246,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"AROOZOO AVE NO 2","lat":1.355474157,"lng":103.8853119,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"BANYAN VILLAS","lat":1.388436913,"lng":103.8385887,"voltage":"6.6KV/LV","zone":"North"},{"name":"BEDOK PESARI","lat":1.324584573,"lng":103.9542067,"voltage":"6.6KV/LV","zone":"East"},{"name":"BISHOPSGATE","lat":1.298278419,"lng":103.8237398,"voltage":"6.6KV/LV","zone":"Central"},{"name":"CASA NALLUR","lat":1.312318891,"lng":103.9321708,"voltage":"6.6KV/LV","zone":"East"},{"name":"CASHEW GDN 6.6KV","lat":1.37121474,"lng":103.7689565,"voltage":"6.6KV/LV","zone":"West"},{"name":"CATHAY GDN","lat":1.309613464,"lng":103.9195861,"voltage":"6.6KV/LV","zone":"East"},{"name":"CHARLTON LANE","lat":1.355811554,"lng":103.881956,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"CHESTER PK","lat":1.281247452,"lng":103.7871291,"voltage":"6.6KV/LV","zone":"South"},{"name":"CHESTNUT CLOSE","lat":1.36975654,"lng":103.7729576,"voltage":"6.6KV/LV","zone":"West"},{"name":"CHESTNUT GDN","lat":1.369471969,"lng":103.768465,"voltage":"6.6KV/LV","zone":"West"},{"name":"CHWEE CHIAN VIEW","lat":1.279846177,"lng":103.7882066,"voltage":"6.6KV/LV","zone":"South"},{"name":"CLEMENTI CRES","lat":1.323207838,"lng":103.7729363,"voltage":"6.6KV/LV","zone":"West"},{"name":"CLYDESCOVE","lat":1.379649911,"lng":103.9616231,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"CONWAY GR","lat":1.358352906,"lng":103.8651992,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"CORONATION DR","lat":1.323082396,"lng":103.8056391,"voltage":"6.6KV/LV","zone":"Central"},{"name":"DAISY PK","lat":1.344881128,"lng":103.8667732,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"DAISY RD","lat":1.344140906,"lng":103.8676736,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"DEDAP GDN","lat":1.387636913,"lng":103.8670263,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"DEDAP RD","lat":1.388492264,"lng":103.865271,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"DUCHESS AVE","lat":1.32347686,"lng":103.802928,"voltage":"6.6KV/LV","zone":"Central"},{"name":"DUCHESS PL","lat":1.324983126,"lng":103.8020825,"voltage":"6.6KV/LV","zone":"Central"},{"name":"DUCHESS RD","lat":1.323573233,"lng":103.8073684,"voltage":"6.6KV/LV","zone":"Central"},{"name":"DUNBAR WALK","lat":1.312586871,"lng":103.9166642,"voltage":"6.6KV/LV","zone":"East"},{"name":"EATON WALK","lat":1.38828281,"lng":103.8772455,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"EDEN PK","lat":1.329943995,"lng":103.7924033,"voltage":"6.6KV/LV","zone":"Central"},{"name":"ELIAS TER","lat":1.372353617,"lng":103.9421821,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"EXCELSIOR GDNS","lat":1.324749834,"lng":103.9523207,"voltage":"6.6KV/LV","zone":"East"},{"name":"FERNHILL CRES","lat":1.31267575,"lng":103.8239746,"voltage":"6.6KV/LV","zone":"Central"},{"name":"FIGARO GDN","lat":1.315152825,"lng":103.9259583,"voltage":"6.6KV/LV","zone":"East"},{"name":"FIGARO ST","lat":1.316228211,"lng":103.9274013,"voltage":"6.6KV/LV","zone":"East"},{"name":"FLORENCE ROW","lat":1.363943234,"lng":103.8662346,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"FLOWER RD O/D","lat":1.36146414,"lng":103.8793242,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"FONTANA HT","lat":1.315780352,"lng":103.7769667,"voltage":"6.6KV/LV","zone":"South"},{"name":"FORD AVE NO 1","lat":1.313806751,"lng":103.7956801,"voltage":"6.6KV/LV","zone":"Central"},{"name":"GALLOP RIDGE","lat":1.313469132,"lng":103.7972997,"voltage":"6.6KV/LV","zone":"Central"},{"name":"GERALD GDNS","lat":1.387480318,"lng":103.8758055,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"GERALD PK","lat":1.388057818,"lng":103.8779957,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"GOLDEN RISE EST","lat":1.354762402,"lng":103.8616045,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"GRACE PK","lat":1.357683075,"lng":103.868826,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"GREENWOOD PL","lat":1.333146805,"lng":103.8058993,"voltage":"6.6KV/LV","zone":"Central"},{"name":"GUAN SOON TER","lat":1.337901658,"lng":103.9536283,"voltage":"6.6KV/LV","zone":"East"},{"name":"HIGHGATE PK NO 1","lat":1.339602105,"lng":103.7653532,"voltage":"6.6KV/LV","zone":"West"},{"name":"HIGHLAND RD","lat":1.357898654,"lng":103.8788188,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"HIGHLAND TER","lat":1.35880238,"lng":103.8797227,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"HILLCREST PK","lat":1.331442636,"lng":103.8075911,"voltage":"6.6KV/LV","zone":"Central"},{"name":"HOCK SENG GDN","lat":1.336096224,"lng":103.7883936,"voltage":"6.6KV/LV","zone":"Central"},{"name":"HOLLAND GR AVE","lat":1.314505135,"lng":103.7805235,"voltage":"6.6KV/LV","zone":"South"},{"name":"HUA GUAN GDN","lat":1.335827226,"lng":103.7846294,"voltage":"6.6KV/LV","zone":"Central"},{"name":"HUA MEI GDN","lat":1.374754314,"lng":103.7580705,"voltage":"6.6KV/LV","zone":"West"},{"name":"ISLAND GDN","lat":1.362044805,"lng":103.8290733,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JADE VINE GDNS","lat":1.365975646,"lng":103.8818578,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JAMES VILLE","lat":1.285594845,"lng":103.843629,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JLN ANGIN LAUT","lat":1.337027403,"lng":103.955066,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN BATU NILAM","lat":1.359312906,"lng":103.7623139,"voltage":"6.6KV/LV","zone":"West"},{"name":"JLN CHELAGI","lat":1.361539331,"lng":103.9652072,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN HAJI SALAM O/D","lat":1.320583119,"lng":103.9529458,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN KG CHANTEK","lat":1.342630314,"lng":103.7885975,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JLN LEBAN","lat":1.373472243,"lng":103.8306749,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN LEGUNDI","lat":1.442283424,"lng":103.8230764,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN MACHANG","lat":1.457698859,"lng":103.8355373,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN MINGGU","lat":1.354210828,"lng":103.8366035,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JLN MUHIBBAH","lat":1.332286378,"lng":103.8805482,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN PARAS","lat":1.326468318,"lng":103.9165929,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN PARI KIKIS","lat":1.331780272,"lng":103.9428011,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN PELATOK","lat":1.346216306,"lng":103.9612546,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN RASOK","lat":1.416398157,"lng":103.7589586,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN REDOP","lat":1.385701567,"lng":103.870552,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN RENGKAM","lat":1.36256018,"lng":103.8883109,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN RINDU","lat":1.345815003,"lng":103.8769732,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN SAYANG","lat":1.321714337,"lng":103.9151155,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN SENANDONG","lat":1.336000117,"lng":103.7895675,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JLN SENDUDOK","lat":1.444883417,"lng":103.8249453,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN TAMBUR","lat":1.364727441,"lng":103.8295617,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN TARI SERIMPI","lat":1.397341038,"lng":103.8724712,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN TIGA RATUS","lat":1.341578414,"lng":103.9600632,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN WANGI","lat":1.331015568,"lng":103.874252,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JOO CHIAT PL O/D","lat":1.314433701,"lng":103.9071885,"voltage":"6.6KV/LV","zone":"East"},{"name":"KASAI RD","lat":1.386795321,"lng":103.866399,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"KENSINGTON PARK RD","lat":1.367851,"lng":103.866542,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"KINGS CLOSE","lat":1.317732589,"lng":103.8032226,"voltage":"6.6KV/LV","zone":"Central"},{"name":"KOVAN PK","lat":1.35796313,"lng":103.881956,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"KURAU TER","lat":1.311719022,"lng":103.9156551,"voltage":"6.6KV/LV","zone":"East"},{"name":"LA QUINTA PK","lat":1.35681107,"lng":103.8675916,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LEITH GDN","lat":1.362024331,"lng":103.8749983,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LIEN TOWER","lat":1.310035336,"lng":103.8045696,"voltage":"6.6KV/LV","zone":"Central"},{"name":"LIM TAI SEE WALK","lat":1.322574808,"lng":103.7925106,"voltage":"6.6KV/LV","zone":"Central"},{"name":"LIMAU GDN","lat":1.322223532,"lng":103.9497149,"voltage":"6.6KV/LV","zone":"East"},{"name":"LIMAU GR","lat":1.322708651,"lng":103.9514324,"voltage":"6.6KV/LV","zone":"East"},{"name":"LIMAU VILLAS","lat":1.323861777,"lng":103.9505084,"voltage":"6.6KV/LV","zone":"East"},{"name":"LLYN GDNS","lat":1.348765506,"lng":103.8811149,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR 1 REALTY PK","lat":1.36745356,"lng":103.8903384,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR GAMBIR","lat":1.345625503,"lng":103.8755616,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR HOW SUN","lat":1.344596503,"lng":103.8803217,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR L TK KURAU","lat":1.312297919,"lng":103.9132744,"voltage":"6.6KV/LV","zone":"East"},{"name":"LOR MARZUKI","lat":1.322423659,"lng":103.9089126,"voltage":"6.6KV/LV","zone":"East"},{"name":"LOR ONG LYE","lat":1.348002632,"lng":103.879032,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR SARINA","lat":1.318933112,"lng":103.9078037,"voltage":"6.6KV/LV","zone":"East"},{"name":"LOWLAND RD","lat":1.361204628,"lng":103.8832466,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LUCKY PK","lat":1.329241266,"lng":103.7942721,"voltage":"6.6KV/LV","zone":"Central"},{"name":"MANILA GDN","lat":1.317916301,"lng":103.9251973,"voltage":"6.6KV/LV","zone":"East"},{"name":"MIMOSA RD","lat":1.384129733,"lng":103.8617229,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"MIMOSA TER","lat":1.384485,"lng":103.860965,"voltage":"6.6KV/LV","zone":"North"},{"name":"MIMOSA VALE","lat":1.382997336,"lng":103.8600772,"voltage":"6.6KV/LV","zone":"North"},{"name":"MING PK","lat":1.352554223,"lng":103.8474941,"voltage":"6.6KV/LV","zone":"Central"},{"name":"MUN WAH GDN","lat":1.381572068,"lng":103.8321385,"voltage":"6.6KV/LV","zone":"North"},{"name":"NIM RD NO 1","lat":1.38399621,"lng":103.8648043,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PALM DR","lat":1.314485142,"lng":103.9300086,"voltage":"6.6KV/LV","zone":"East"},{"name":"PALM GR TER","lat":1.361070702,"lng":103.878972,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PARK VILLAS NO 2","lat":1.368132637,"lng":103.8801223,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PARRY GREEN","lat":1.366374018,"lng":103.8766773,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PARRY VIEW","lat":1.365901002,"lng":103.8789835,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PASIR PANJANG HILL NO 2","lat":1.281552902,"lng":103.7854741,"voltage":"6.6KV/LV","zone":"South"},{"name":"PASIR RIS PK NO 2","lat":1.384106494,"lng":103.9437565,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PENSHURST PL","lat":1.363675334,"lng":103.864506,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PILLAI RD O/D","lat":1.347365303,"lng":103.8796883,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PLATINA GDN","lat":1.427806931,"lng":103.8252332,"voltage":"6.6KV/LV","zone":"North"},{"name":"POH HUAT GDNS","lat":1.367856054,"lng":103.8813643,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"POPULAR EST","lat":1.359816,"lng":103.758691,"voltage":"6.6KV/LV","zone":"West"},{"name":"PUNGGOL 24TH AVE","lat":1.418931463,"lng":103.9092156,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"QUEENS ASTRID PK","lat":1.31813438,"lng":103.7904692,"voltage":"6.6KV/LV","zone":"Central"},{"name":"RAIN TREE VALLEY","lat":1.38471361,"lng":103.8303758,"voltage":"6.6KV/LV","zone":"North"},{"name":"ROMAN TER","lat":1.312695338,"lng":103.9152884,"voltage":"6.6KV/LV","zone":"East"},{"name":"S'WANG HILL DR","lat":1.376328423,"lng":103.830372,"voltage":"6.6KV/LV","zone":"North"},{"name":"SANFORD PK","lat":1.358356482,"lng":103.8757157,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"SANNY PK","lat":1.313573984,"lng":103.914806,"voltage":"6.6KV/LV","zone":"East"},{"name":"SARACA VILLAS","lat":1.38363891,"lng":103.8590274,"voltage":"6.6KV/LV","zone":"North"},{"name":"SELETAR GDN","lat":1.390966612,"lng":103.8509624,"voltage":"6.6KV/LV","zone":"North"},{"name":"SERENADE GDN","lat":1.379585465,"lng":103.8346784,"voltage":"6.6KV/LV","zone":"North"},{"name":"SHANGRI-LA PK","lat":1.370034392,"lng":103.8330048,"voltage":"6.6KV/LV","zone":"North"},{"name":"SIMEI GDN","lat":1.336899092,"lng":103.9520244,"voltage":"6.6KV/LV","zone":"East"},{"name":"SIMS VIEW","lat":1.320080126,"lng":103.9109243,"voltage":"6.6KV/LV","zone":"East"},{"name":"SPRINGBROOK TER","lat":1.362213532,"lng":103.9700157,"voltage":"6.6KV/LV","zone":"East"},{"name":"SPRINGLEAF GREEN","lat":1.399418034,"lng":103.8253829,"voltage":"6.6KV/LV","zone":"North"},{"name":"ST ANNE'S WOOD","lat":1.391655638,"lng":103.9031031,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"ST PATRICK'S ROW","lat":1.307964018,"lng":103.9129481,"voltage":"6.6KV/LV","zone":"East"},{"name":"SUMMER PL","lat":1.35671779,"lng":103.8689458,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"SUNNYVALE PASIR PANJANG","lat":1.313886562,"lng":103.9151859,"voltage":"6.6KV/LV","zone":"East"},{"name":"TAI HWAN WALK","lat":1.356653702,"lng":103.8612775,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"TAI KENG PL","lat":1.345188636,"lng":103.885098,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"TAMAN SELAMAT","lat":1.32534825,"lng":103.9145184,"voltage":"6.6KV/LV","zone":"East"},{"name":"TAMAN SIGLAP","lat":1.320223334,"lng":103.9210888,"voltage":"6.6KV/LV","zone":"East"},{"name":"TAMARIND RD","lat":1.389408138,"lng":103.8604755,"voltage":"6.6KV/LV","zone":"North"},{"name":"THIRD AVE","lat":1.328670429,"lng":103.7982099,"voltage":"6.6KV/LV","zone":"Central"},{"name":"THOMSON 800","lat":1.340932899,"lng":103.8376791,"voltage":"6.6KV/LV","zone":"Central"},{"name":"THRIFT DR","lat":1.343930906,"lng":103.8835766,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"TOH DR O/D","lat":1.364490695,"lng":103.9731717,"voltage":"6.6KV/LV","zone":"East"},{"name":"TOH TUCK CLOSE TERRACE","lat":1.338738639,"lng":103.7664729,"voltage":"6.6KV/LV","zone":"West"},{"name":"TOH TUCK TER O/D","lat":1.338802854,"lng":103.7686885,"voltage":"6.6KV/LV","zone":"West"},{"name":"TOH TUCK VILLA","lat":1.33531691,"lng":103.7682077,"voltage":"6.6KV/LV","zone":"West"},{"name":"UPP BEDOK RD","lat":1.329582746,"lng":103.9478656,"voltage":"6.6KV/LV","zone":"East"},{"name":"UPP SERANGOON 7 MS","lat":1.362012168,"lng":103.8869401,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"UPP SERANGOON RD/FLOWER RD","lat":1.358650625,"lng":103.8830011,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"VANDA RD","lat":1.332830526,"lng":103.7993801,"voltage":"6.6KV/LV","zone":"Central"},{"name":"VARSITY PK","lat":1.294495419,"lng":103.7674184,"voltage":"6.6KV/LV","zone":"South"},{"name":"VAUGHAN RD","lat":1.347299103,"lng":103.8710557,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"VICTORIA PK","lat":1.321861956,"lng":103.8029625,"voltage":"6.6KV/LV","zone":"Central"},{"name":"VILLA BEGONIA","lat":1.387530284,"lng":103.860472,"voltage":"6.6KV/LV","zone":"North"},{"name":"WARWICK RD","lat":1.287486862,"lng":103.7979862,"voltage":"6.6KV/LV","zone":"South"},{"name":"WELLINGTON GDN NO 2","lat":1.372315519,"lng":103.8340376,"voltage":"6.6KV/LV","zone":"North"},{"name":"WEST COAST VIEW","lat":1.295535845,"lng":103.7668686,"voltage":"6.6KV/LV","zone":"South"},{"name":"WESTRIDGE","lat":1.277690217,"lng":103.790153,"voltage":"6.6KV/LV","zone":"South"},{"name":"WHITE HSE PK","lat":1.316022096,"lng":103.8224856,"voltage":"6.6KV/LV","zone":"Central"},{"name":"YIO CHU KANG GDN","lat":1.381326965,"lng":103.8367573,"voltage":"6.6KV/LV","zone":"North"},{"name":"YIO CHU KANG TER","lat":1.358610257,"lng":103.8748313,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"YUNNAN GDN NO 1","lat":1.338593513,"lng":103.6897186,"voltage":"6.6KV/LV","zone":"West"}];</script>
 <script type="text/babel">
 const {useState,useMemo,useRef,useEffect} = React;
@@ -211,27 +251,27 @@ const DATA = window.SUBSTATIONS;
 const HQ = {name:"SP Group HQ", address:"2 Kallang Sector, Singapore 349277", lat:1.3127, lng:103.8698};
 const MAX_STOPS = 5;
 
-function haversine(lat1,lng1,lat2,lng2){
-  const R=6371, rad=Math.PI/180;
-  const dLat=(lat2-lat1)*rad, dLng=(lng2-lng1)*rad;
-  const a=Math.sin(dLat/2)**2 + Math.cos(lat1*rad)*Math.cos(lat2*rad)*Math.sin(dLng/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
+const BASEMAPS = {
+  dark: {label:"Dark",  url:"https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"},
+  light:{label:"Light", url:"https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"},
+  grey: {label:"Grey",  url:"https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"},
+};
+const BASEMAP_ORDER = ["dark","light","grey"];
 
-function nearestNeighbourTSP(hq,stops){
-  const unvisited=[...stops], route=[];
-  let current=hq;
-  while(unvisited.length){
-    let bi=0, bd=Infinity;
-    unvisited.forEach((s,i)=>{
-      const d=haversine(current.lat,current.lng,s.lat,s.lng);
-      if(d<bd){bd=d;bi=i;}
-    });
-    const next=unvisited.splice(bi,1)[0];
-    route.push(next);
-    current=next;
-  }
-  return route;
+// Sorting every vertex by its bearing around an interior point always yields a
+// simple polygon, so the route can never cross itself.
+function angularSweepRoute(hq,stops){
+  if(stops.length<2) return [...stops];
+  const ring=[hq,...stops];
+  const cLat=ring.reduce((s,p)=>s+p.lat,0)/ring.length;
+  const cLng=ring.reduce((s,p)=>s+p.lng,0)/ring.length;
+  const bearing=p=>{
+    const a=Math.atan2(p.lat-cLat,(p.lng-cLng)*Math.cos(cLat*Math.PI/180));
+    return a<0?a+2*Math.PI:a;
+  };
+  const swept=[...ring].sort((a,b)=>bearing(a)-bearing(b));
+  const h=swept.indexOf(hq);
+  return [...swept.slice(h+1),...swept.slice(0,h)];
 }
 
 function Icon(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>;}
@@ -246,8 +286,11 @@ function App(){
   const [stops,setStops]=useState([]);
   const [rq,setRq]=useState("");
   const [flash,setFlash]=useState(false);
+  const [basemap,setBasemap]=useState("light");
+  const [cluster,setCluster]=useState(false);
   const mapRef=useRef(null); const markersRef=useRef({}); const elRef=useRef(null);
-  const routeLayerRef=useRef(null);
+  const routeLayerRef=useRef(null); const tileRef=useRef(null); const clusterRef=useRef(null);
+  const canCluster = typeof L.markerClusterGroup === "function";
 
   const counts=useMemo(()=>{const c={};DATA.forEach(d=>c[d.zone]=(c[d.zone]||0)+1);return c;},[]);
 
@@ -263,7 +306,7 @@ function App(){
   // init map once
   useEffect(()=>{
     const map=L.map(elRef.current,{zoomControl:true,attributionControl:true}).setView([1.352,103.84],11.4);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{
+    tileRef.current=L.tileLayer(BASEMAPS.light.url,{
       maxZoom:19,subdomains:"abcd",
       attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
     mapRef.current=map;
@@ -282,8 +325,24 @@ function App(){
       markersRef.current[d.name]=m;
     });
     routeLayerRef.current=L.layerGroup().addTo(map);
+    if(canCluster){
+      clusterRef.current=L.markerClusterGroup({
+        showCoverageOnHover:false, maxClusterRadius:60, chunkedLoading:true,
+        iconCreateFunction:c=>L.divIcon({className:"",iconSize:[38,38],
+          html:'<div class="cl-icon">'+c.getChildCount()+'</div>'})
+      });
+    }
     return ()=>map.remove();
   },[]);
+
+  // swap the tile layer without disturbing markers or the current view
+  useEffect(()=>{
+    const map=mapRef.current; if(!map||!tileRef.current) return;
+    map.removeLayer(tileRef.current);
+    tileRef.current=L.tileLayer(BASEMAPS[basemap].url,{
+      maxZoom:19,subdomains:"abcd",
+      attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+  },[basemap]);
 
   // draw HQ marker, numbered stop markers and the closed-loop polyline
   useEffect(()=>{
@@ -292,7 +351,7 @@ function App(){
     if(!routeMode||stops.length===0) return;
 
     const line=[[HQ.lat,HQ.lng],...stops.map(s=>[s.lat,s.lng]),[HQ.lat,HQ.lng]];
-    L.polyline(line,{color:"#e8eef7",weight:3,opacity:.6,dashArray:"8 8",lineJoin:"round"}).addTo(layer);
+    L.polyline(line,{color:"#e8002d",weight:3.5,opacity:.9,dashArray:"9 7",lineJoin:"round"}).addTo(layer);
 
     L.marker([HQ.lat,HQ.lng],{
       icon:L.divIcon({className:"",iconSize:[26,26],iconAnchor:[13,13],html:'<div class="rp-hq-icon">HQ</div>'}),
@@ -301,7 +360,7 @@ function App(){
       '<div class="pop"><h3>SP Group HQ</h3>'+
       '<div class="prow"><span>Address</span><b>2 Kallang Sector</b></div>'+
       '<div class="prow"><span>Postal</span><b>349277</b></div>'+
-      '<div class="prow"><span>Role</span><b>Start &amp; End</b></div></div>');
+      '<div class="prow"><span>Role</span><b>Start &amp; end</b></div></div>');
 
     stops.forEach((s,i)=>{
       L.marker([s.lat,s.lng],{
@@ -333,29 +392,46 @@ function App(){
   function removeStop(name){setStops(stops.filter(s=>s.name!==name));}
   function optimiseRoute(){
     if(stops.length<2) return;
-    setStops(nearestNeighbourTSP(HQ,stops));
+    setStops(angularSweepRoute(HQ,stops));
     setFlash(true); setTimeout(()=>setFlash(false),700);
   }
   function openInGoogleMaps(){
     if(!stops.length) return;
-    const wp=stops.map(s=>s.lat+","+s.lng).join("%7C");
-    window.open("https://www.google.com/maps/dir/?api=1&origin="+HQ.lat+","+HQ.lng+
-      "&destination="+HQ.lat+","+HQ.lng+"&waypoints="+wp+"&travelmode=driving","_blank","noopener");
+    const path=[HQ,...stops,HQ].map(p=>p.lat+","+p.lng).join("/");
+    window.open("https://www.google.com/maps/dir/"+path,"_blank","noopener");
   }
   function clearRoute(){setStops([]);setRq("");}
   function exitRoute(){setRouteMode(false);setStops([]);setRq("");}
 
-  // show/hide markers by zone+search
+  // show/hide markers by zone+search, routed through the cluster group when clustering is on
   useEffect(()=>{
+    const map=mapRef.current; if(!map) return;
+    const cg=clusterRef.current;
     const vis=new Set(filtered.map(d=>d.name));
-    Object.entries(markersRef.current).forEach(([nm,m])=>{
-      const on=vis.has(nm); const el=m.getElement();
-      if(el) el.style.display=on?"":"none";
-    });
-  },[filtered]);
+    if(cluster&&cg){
+      const inCluster=[];
+      Object.entries(markersRef.current).forEach(([nm,m])=>{
+        if(map.hasLayer(m)) map.removeLayer(m);
+        if(vis.has(nm)) inCluster.push(m);
+      });
+      cg.clearLayers();
+      cg.addLayers(inCluster);
+      if(!map.hasLayer(cg)) map.addLayer(cg);
+    }else{
+      if(cg&&map.hasLayer(cg)){map.removeLayer(cg);cg.clearLayers();}
+      Object.entries(markersRef.current).forEach(([nm,m])=>{
+        if(!map.hasLayer(m)) m.addTo(map);
+        const el=m.getElement();
+        if(el) el.style.display=vis.has(nm)?"":"none";
+      });
+    }
+  },[filtered,cluster]);
 
-  function flyTo(d){const m=mapRef.current;m.flyTo([d.lat,d.lng],16,{duration:.7});
-    setTimeout(()=>markersRef.current[d.name].openPopup(),650);setSel(d.name);}
+  function flyTo(d){const m=mapRef.current;const mk=markersRef.current[d.name];
+    if(cluster&&clusterRef.current&&clusterRef.current.hasLayer(mk)){
+      setSel(d.name);clusterRef.current.zoomToShowLayer(mk,()=>mk.openPopup());return;}
+    m.flyTo([d.lat,d.lng],16,{duration:.7});
+    setTimeout(()=>mk.openPopup(),650);setSel(d.name);}
   function zoomZone(z){
     const pts=DATA.filter(d=>d.zone===z);if(!pts.length)return;
     const b=L.latLngBounds(pts.map(d=>[d.lat,d.lng]));
@@ -381,14 +457,14 @@ function App(){
       <div className="plan">
         <button className={"plan-btn"+(routeMode?" on":"")}
           onClick={()=>routeMode?exitRoute():setRouteMode(true)}>
-          <RouteIcon/>{routeMode?"Exit Route Mode":"Plan Route"}
+          <RouteIcon/>{routeMode?"Exit route mode":"Plan route"}
         </button>
       </div>
 
       {routeMode ? (
       <div className="rp">
         <div className="rp-hd">
-          <h2>Route Planner</h2>
+          <h2>Route planner</h2>
           <button className="rp-x" onClick={exitRoute} title="Exit route mode">×</button>
         </div>
 
@@ -399,7 +475,7 @@ function App(){
               <span className="nm">SP Group HQ</span>
               <span className="ad">{HQ.address}</span>
             </span>
-            <span className="tag">Start &amp; End</span>
+            <span className="tag">Start &amp; end</span>
           </div>
 
           <div className="rp-count">
@@ -441,9 +517,9 @@ function App(){
         </div>
 
         <div className="rp-act">
-          <button className="rp-btn ghost" disabled={stops.length<2} onClick={optimiseRoute}>Optimise Route</button>
+          <button className="rp-btn ghost" disabled={stops.length<2} onClick={optimiseRoute}>Optimise route</button>
           <button className="rp-btn primary" disabled={stops.length<1} onClick={openInGoogleMaps}>Open in Google Maps →</button>
-          <button className="rp-btn quiet" onClick={clearRoute}>Clear Route</button>
+          <button className="rp-btn quiet" onClick={clearRoute}>Clear route</button>
         </div>
       </div>
       ) : (
@@ -484,6 +560,14 @@ function App(){
         </div>
       </div>
 
+      <div className="cluster">
+        <button className={"cl-btn"+(cluster?" on":"")} disabled={!canCluster}
+          onClick={()=>setCluster(!cluster)}
+          title={canCluster?"Group nearby pins into clusters":"Clustering library unavailable"}>
+          Cluster pins <span className="st">{cluster?"On":"Off"}</span>
+        </button>
+      </div>
+
       <div className="list">
         {filtered.length===0 && <div className="empty">No substations match.<br/>Try a different name or switch a zone back on.</div>}
         {filtered.map(d=>(
@@ -500,6 +584,11 @@ function App(){
 
     <div className="stage">
       <div ref={elRef} id="map"></div>
+      <div className="basemap">
+        {BASEMAP_ORDER.map(k=>(
+          <button key={k} className={basemap===k?"on":""} onClick={()=>setBasemap(k)}>{BASEMAPS[k].label}</button>
+        ))}
+      </div>
       <div className="counter"><b>{filtered.length}</b> of {DATA.length} shown</div>
       <div className="legend">
         <div className="lt">Zone</div>
