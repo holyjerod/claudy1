@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SP Grid Atlas — 6.6KV/LV Substations</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#0e1420; --panel:#151d2b; --panel2:#1b2536; --line:#25324a;
+    --ink:#e8eef7; --ink-dim:#93a2bd; --ink-faint:#5f6f8c;
+    --accent:#38bdf8; --accent-ink:#04121d;
+    --z-central:#818cf8; --z-east:#fbbf24; --z-ne:#34d399;
+    --z-north:#f472b6; --z-west:#60a5fa; --z-south:#fb7185;
+    --font-d:'Space Grotesk',sans-serif; --font-b:'IBM Plex Sans',sans-serif; --font-m:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body,#root{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-b);overflow:hidden;-webkit-font-smoothing:antialiased}
+  .app{display:grid;grid-template-columns:360px 1fr;height:100%}
+  @media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.rail{max-height:46vh}}
+
+  .rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  .brand{padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+  .brand h1{font-family:var(--font-d);font-size:19px;font-weight:700;letter-spacing:-.01em;line-height:1.1}
+  .brand .sub{font-size:12px;color:var(--ink-dim);margin-top:4px;font-family:var(--font-m)}
+  .stat{display:flex;gap:16px;margin-top:12px}
+  .stat b{font-family:var(--font-d);font-size:20px;font-weight:600;display:block;line-height:1}
+  .stat span{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em}
+
+  .controls{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .search{position:relative}
+  .search input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+    padding:10px 12px 10px 36px;color:var(--ink);font-family:var(--font-b);font-size:14px;outline:none}
+  .search input:focus{border-color:var(--accent)}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-faint)}
+  .row{display:flex;gap:8px;margin-top:10px;align-items:center}
+  .row label{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em}
+  select{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);
+    padding:7px 9px;font-family:var(--font-b);font-size:13px;outline:none;cursor:pointer}
+  select:focus{border-color:var(--accent)}
+
+  .zones{padding:12px 16px;border-bottom:1px solid var(--line)}
+  .zones .hd{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}
+  .zgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .zbtn{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;padding:8px 10px;cursor:pointer;color:var(--ink);font-family:var(--font-b);font-size:13px;
+    transition:border-color .12s,background .12s;text-align:left}
+  .zbtn:hover{border-color:var(--ink-faint)}
+  .zbtn.off{opacity:.4}
+  .zbtn .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .zbtn .zn{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .zbtn .zc{font-family:var(--font-m);font-size:11px;color:var(--ink-dim)}
+  .zall{display:flex;gap:8px;margin-top:8px}
+  .zall button{flex:1;background:transparent;border:1px solid var(--line);border-radius:7px;color:var(--ink-dim);
+    padding:6px;font-size:12px;font-family:var(--font-b);cursor:pointer}
+  .zall button:hover{color:var(--ink);border-color:var(--ink-faint)}
+
+  .list{flex:1;overflow-y:auto;min-height:0}
+  .list::-webkit-scrollbar{width:9px}
+  .list::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
+  .item{padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:11px;align-items:center;transition:background .1s}
+  .item:hover{background:var(--panel2)}
+  .item.active{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
+  .item .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .item .nm{flex:1;font-size:13.5px;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .zg{font-family:var(--font-m);font-size:10.5px;color:var(--ink-faint)}
+  .empty{padding:34px 20px;text-align:center;color:var(--ink-faint);font-size:13px;line-height:1.6}
+
+  .stage{position:relative;min-height:0}
+  #map{position:absolute;inset:0;background:#0b1119}
+  .leaflet-container{background:#0b1119;font-family:var(--font-b)}
+  .leaflet-popup-content-wrapper{background:var(--panel2);color:var(--ink);border-radius:11px;border:1px solid var(--line);box-shadow:0 12px 30px rgba(0,0,0,.5)}
+  .leaflet-popup-tip{background:var(--panel2);border:1px solid var(--line)}
+  .leaflet-popup-content{margin:13px 15px;font-family:var(--font-b)}
+  .pop h3{font-family:var(--font-d);font-size:15px;margin-bottom:7px}
+  .pop .prow{display:flex;justify-content:space-between;gap:20px;font-size:12.5px;padding:3px 0;border-top:1px solid var(--line)}
+  .pop .prow span{color:var(--ink-dim)}
+  .pop .prow b{font-family:var(--font-m);font-weight:500}
+  .pop .zbadge{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px}
+  .pop .zbadge .dot{width:9px;height:9px;border-radius:50%}
+  .gmaps{display:block;margin-top:10px;text-align:center;background:var(--accent);color:var(--accent-ink);
+    text-decoration:none;font-weight:600;font-size:12.5px;padding:7px;border-radius:7px;font-family:var(--font-b)}
+
+  .legend{position:absolute;right:12px;bottom:12px;z-index:500;background:rgba(21,29,43,.92);
+    backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:12px}
+  .legend .lt{font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+  .legend .lr{display:flex;align-items:center;gap:8px;padding:2px 0;color:var(--ink-dim)}
+  .legend .lr .dot{width:9px;height:9px;border-radius:50%}
+  .counter{position:absolute;left:12px;top:12px;z-index:500;background:rgba(21,29,43,.92);backdrop-filter:blur(8px);
+    border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-family:var(--font-m);font-size:12px;color:var(--ink-dim)}
+  .counter b{color:var(--ink);font-weight:500}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>window.SUBSTATIONS = [{"name":"173 SUNBIRD RD","lat":1.338592652,"lng":103.9564287,"voltage":"6.6KV/LV","zone":"East"},{"name":"21 ROSYTH RD","lat":1.362955572,"lng":103.8762825,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"AH HOOD RD 5 STOREY FLAT","lat":1.327600376,"lng":103.8448365,"voltage":"6.6KV/LV","zone":"Central"},{"name":"ARDISIA GDN","lat":1.347701828,"lng":103.8773246,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"AROOZOO AVE NO 2","lat":1.355474157,"lng":103.8853119,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"BANYAN VILLAS","lat":1.388436913,"lng":103.8385887,"voltage":"6.6KV/LV","zone":"North"},{"name":"BEDOK PESARI","lat":1.324584573,"lng":103.9542067,"voltage":"6.6KV/LV","zone":"East"},{"name":"BISHOPSGATE","lat":1.298278419,"lng":103.8237398,"voltage":"6.6KV/LV","zone":"Central"},{"name":"CASA NALLUR","lat":1.312318891,"lng":103.9321708,"voltage":"6.6KV/LV","zone":"East"},{"name":"CASHEW GDN 6.6KV","lat":1.37121474,"lng":103.7689565,"voltage":"6.6KV/LV","zone":"West"},{"name":"CATHAY GDN","lat":1.309613464,"lng":103.9195861,"voltage":"6.6KV/LV","zone":"East"},{"name":"CHARLTON LANE","lat":1.355811554,"lng":103.881956,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"CHESTER PK","lat":1.281247452,"lng":103.7871291,"voltage":"6.6KV/LV","zone":"South"},{"name":"CHESTNUT CLOSE","lat":1.36975654,"lng":103.7729576,"voltage":"6.6KV/LV","zone":"West"},{"name":"CHESTNUT GDN","lat":1.369471969,"lng":103.768465,"voltage":"6.6KV/LV","zone":"West"},{"name":"CHWEE CHIAN VIEW","lat":1.279846177,"lng":103.7882066,"voltage":"6.6KV/LV","zone":"South"},{"name":"CLEMENTI CRES","lat":1.323207838,"lng":103.7729363,"voltage":"6.6KV/LV","zone":"West"},{"name":"CLYDESCOVE","lat":1.379649911,"lng":103.9616231,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"CONWAY GR","lat":1.358352906,"lng":103.8651992,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"CORONATION DR","lat":1.323082396,"lng":103.8056391,"voltage":"6.6KV/LV","zone":"Central"},{"name":"DAISY PK","lat":1.344881128,"lng":103.8667732,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"DAISY RD","lat":1.344140906,"lng":103.8676736,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"DEDAP GDN","lat":1.387636913,"lng":103.8670263,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"DEDAP RD","lat":1.388492264,"lng":103.865271,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"DUCHESS AVE","lat":1.32347686,"lng":103.802928,"voltage":"6.6KV/LV","zone":"Central"},{"name":"DUCHESS PL","lat":1.324983126,"lng":103.8020825,"voltage":"6.6KV/LV","zone":"Central"},{"name":"DUCHESS RD","lat":1.323573233,"lng":103.8073684,"voltage":"6.6KV/LV","zone":"Central"},{"name":"DUNBAR WALK","lat":1.312586871,"lng":103.9166642,"voltage":"6.6KV/LV","zone":"East"},{"name":"EATON WALK","lat":1.38828281,"lng":103.8772455,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"EDEN PK","lat":1.329943995,"lng":103.7924033,"voltage":"6.6KV/LV","zone":"Central"},{"name":"ELIAS TER","lat":1.372353617,"lng":103.9421821,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"EXCELSIOR GDNS","lat":1.324749834,"lng":103.9523207,"voltage":"6.6KV/LV","zone":"East"},{"name":"FERNHILL CRES","lat":1.31267575,"lng":103.8239746,"voltage":"6.6KV/LV","zone":"Central"},{"name":"FIGARO GDN","lat":1.315152825,"lng":103.9259583,"voltage":"6.6KV/LV","zone":"East"},{"name":"FIGARO ST","lat":1.316228211,"lng":103.9274013,"voltage":"6.6KV/LV","zone":"East"},{"name":"FLORENCE ROW","lat":1.363943234,"lng":103.8662346,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"FLOWER RD O/D","lat":1.36146414,"lng":103.8793242,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"FONTANA HT","lat":1.315780352,"lng":103.7769667,"voltage":"6.6KV/LV","zone":"South"},{"name":"FORD AVE NO 1","lat":1.313806751,"lng":103.7956801,"voltage":"6.6KV/LV","zone":"Central"},{"name":"GALLOP RIDGE","lat":1.313469132,"lng":103.7972997,"voltage":"6.6KV/LV","zone":"Central"},{"name":"GERALD GDNS","lat":1.387480318,"lng":103.8758055,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"GERALD PK","lat":1.388057818,"lng":103.8779957,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"GOLDEN RISE EST","lat":1.354762402,"lng":103.8616045,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"GRACE PK","lat":1.357683075,"lng":103.868826,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"GREENWOOD PL","lat":1.333146805,"lng":103.8058993,"voltage":"6.6KV/LV","zone":"Central"},{"name":"GUAN SOON TER","lat":1.337901658,"lng":103.9536283,"voltage":"6.6KV/LV","zone":"East"},{"name":"HIGHGATE PK NO 1","lat":1.339602105,"lng":103.7653532,"voltage":"6.6KV/LV","zone":"West"},{"name":"HIGHLAND RD","lat":1.357898654,"lng":103.8788188,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"HIGHLAND TER","lat":1.35880238,"lng":103.8797227,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"HILLCREST PK","lat":1.331442636,"lng":103.8075911,"voltage":"6.6KV/LV","zone":"Central"},{"name":"HOCK SENG GDN","lat":1.336096224,"lng":103.7883936,"voltage":"6.6KV/LV","zone":"Central"},{"name":"HOLLAND GR AVE","lat":1.314505135,"lng":103.7805235,"voltage":"6.6KV/LV","zone":"South"},{"name":"HUA GUAN GDN","lat":1.335827226,"lng":103.7846294,"voltage":"6.6KV/LV","zone":"Central"},{"name":"HUA MEI GDN","lat":1.374754314,"lng":103.7580705,"voltage":"6.6KV/LV","zone":"West"},{"name":"ISLAND GDN","lat":1.362044805,"lng":103.8290733,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JADE VINE GDNS","lat":1.365975646,"lng":103.8818578,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JAMES VILLE","lat":1.285594845,"lng":103.843629,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JLN ANGIN LAUT","lat":1.337027403,"lng":103.955066,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN BATU NILAM","lat":1.359312906,"lng":103.7623139,"voltage":"6.6KV/LV","zone":"West"},{"name":"JLN CHELAGI","lat":1.361539331,"lng":103.9652072,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN HAJI SALAM O/D","lat":1.320583119,"lng":103.9529458,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN KG CHANTEK","lat":1.342630314,"lng":103.7885975,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JLN LEBAN","lat":1.373472243,"lng":103.8306749,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN LEGUNDI","lat":1.442283424,"lng":103.8230764,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN MACHANG","lat":1.457698859,"lng":103.8355373,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN MINGGU","lat":1.354210828,"lng":103.8366035,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JLN MUHIBBAH","lat":1.332286378,"lng":103.8805482,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN PARAS","lat":1.326468318,"lng":103.9165929,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN PARI KIKIS","lat":1.331780272,"lng":103.9428011,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN PELATOK","lat":1.346216306,"lng":103.9612546,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN RASOK","lat":1.416398157,"lng":103.7589586,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN REDOP","lat":1.385701567,"lng":103.870552,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN RENGKAM","lat":1.36256018,"lng":103.8883109,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN RINDU","lat":1.345815003,"lng":103.8769732,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN SAYANG","lat":1.321714337,"lng":103.9151155,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN SENANDONG","lat":1.336000117,"lng":103.7895675,"voltage":"6.6KV/LV","zone":"Central"},{"name":"JLN SENDUDOK","lat":1.444883417,"lng":103.8249453,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN TAMBUR","lat":1.364727441,"lng":103.8295617,"voltage":"6.6KV/LV","zone":"North"},{"name":"JLN TARI SERIMPI","lat":1.397341038,"lng":103.8724712,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JLN TIGA RATUS","lat":1.341578414,"lng":103.9600632,"voltage":"6.6KV/LV","zone":"East"},{"name":"JLN WANGI","lat":1.331015568,"lng":103.874252,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"JOO CHIAT PL O/D","lat":1.314433701,"lng":103.9071885,"voltage":"6.6KV/LV","zone":"East"},{"name":"KASAI RD","lat":1.386795321,"lng":103.866399,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"KENSINGTON PARK RD","lat":1.367851,"lng":103.866542,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"KINGS CLOSE","lat":1.317732589,"lng":103.8032226,"voltage":"6.6KV/LV","zone":"Central"},{"name":"KOVAN PK","lat":1.35796313,"lng":103.881956,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"KURAU TER","lat":1.311719022,"lng":103.9156551,"voltage":"6.6KV/LV","zone":"East"},{"name":"LA QUINTA PK","lat":1.35681107,"lng":103.8675916,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LEITH GDN","lat":1.362024331,"lng":103.8749983,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LIEN TOWER","lat":1.310035336,"lng":103.8045696,"voltage":"6.6KV/LV","zone":"Central"},{"name":"LIM TAI SEE WALK","lat":1.322574808,"lng":103.7925106,"voltage":"6.6KV/LV","zone":"Central"},{"name":"LIMAU GDN","lat":1.322223532,"lng":103.9497149,"voltage":"6.6KV/LV","zone":"East"},{"name":"LIMAU GR","lat":1.322708651,"lng":103.9514324,"voltage":"6.6KV/LV","zone":"East"},{"name":"LIMAU VILLAS","lat":1.323861777,"lng":103.9505084,"voltage":"6.6KV/LV","zone":"East"},{"name":"LLYN GDNS","lat":1.348765506,"lng":103.8811149,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR 1 REALTY PK","lat":1.36745356,"lng":103.8903384,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR GAMBIR","lat":1.345625503,"lng":103.8755616,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR HOW SUN","lat":1.344596503,"lng":103.8803217,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR L TK KURAU","lat":1.312297919,"lng":103.9132744,"voltage":"6.6KV/LV","zone":"East"},{"name":"LOR MARZUKI","lat":1.322423659,"lng":103.9089126,"voltage":"6.6KV/LV","zone":"East"},{"name":"LOR ONG LYE","lat":1.348002632,"lng":103.879032,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LOR SARINA","lat":1.318933112,"lng":103.9078037,"voltage":"6.6KV/LV","zone":"East"},{"name":"LOWLAND RD","lat":1.361204628,"lng":103.8832466,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"LUCKY PK","lat":1.329241266,"lng":103.7942721,"voltage":"6.6KV/LV","zone":"Central"},{"name":"MANILA GDN","lat":1.317916301,"lng":103.9251973,"voltage":"6.6KV/LV","zone":"East"},{"name":"MIMOSA RD","lat":1.384129733,"lng":103.8617229,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"MIMOSA TER","lat":1.384485,"lng":103.860965,"voltage":"6.6KV/LV","zone":"North"},{"name":"MIMOSA VALE","lat":1.382997336,"lng":103.8600772,"voltage":"6.6KV/LV","zone":"North"},{"name":"MING PK","lat":1.352554223,"lng":103.8474941,"voltage":"6.6KV/LV","zone":"Central"},{"name":"MUN WAH GDN","lat":1.381572068,"lng":103.8321385,"voltage":"6.6KV/LV","zone":"North"},{"name":"NIM RD NO 1","lat":1.38399621,"lng":103.8648043,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PALM DR","lat":1.314485142,"lng":103.9300086,"voltage":"6.6KV/LV","zone":"East"},{"name":"PALM GR TER","lat":1.361070702,"lng":103.878972,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PARK VILLAS NO 2","lat":1.368132637,"lng":103.8801223,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PARRY GREEN","lat":1.366374018,"lng":103.8766773,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PARRY VIEW","lat":1.365901002,"lng":103.8789835,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PASIR PANJANG HILL NO 2","lat":1.281552902,"lng":103.7854741,"voltage":"6.6KV/LV","zone":"South"},{"name":"PASIR RIS PK NO 2","lat":1.384106494,"lng":103.9437565,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PENSHURST PL","lat":1.363675334,"lng":103.864506,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PILLAI RD O/D","lat":1.347365303,"lng":103.8796883,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"PLATINA GDN","lat":1.427806931,"lng":103.8252332,"voltage":"6.6KV/LV","zone":"North"},{"name":"POH HUAT GDNS","lat":1.367856054,"lng":103.8813643,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"POPULAR EST","lat":1.359816,"lng":103.758691,"voltage":"6.6KV/LV","zone":"West"},{"name":"PUNGGOL 24TH AVE","lat":1.418931463,"lng":103.9092156,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"QUEENS ASTRID PK","lat":1.31813438,"lng":103.7904692,"voltage":"6.6KV/LV","zone":"Central"},{"name":"RAIN TREE VALLEY","lat":1.38471361,"lng":103.8303758,"voltage":"6.6KV/LV","zone":"North"},{"name":"ROMAN TER","lat":1.312695338,"lng":103.9152884,"voltage":"6.6KV/LV","zone":"East"},{"name":"S'WANG HILL DR","lat":1.376328423,"lng":103.830372,"voltage":"6.6KV/LV","zone":"North"},{"name":"SANFORD PK","lat":1.358356482,"lng":103.8757157,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"SANNY PK","lat":1.313573984,"lng":103.914806,"voltage":"6.6KV/LV","zone":"East"},{"name":"SARACA VILLAS","lat":1.38363891,"lng":103.8590274,"voltage":"6.6KV/LV","zone":"North"},{"name":"SELETAR GDN","lat":1.390966612,"lng":103.8509624,"voltage":"6.6KV/LV","zone":"North"},{"name":"SERENADE GDN","lat":1.379585465,"lng":103.8346784,"voltage":"6.6KV/LV","zone":"North"},{"name":"SHANGRI-LA PK","lat":1.370034392,"lng":103.8330048,"voltage":"6.6KV/LV","zone":"North"},{"name":"SIMEI GDN","lat":1.336899092,"lng":103.9520244,"voltage":"6.6KV/LV","zone":"East"},{"name":"SIMS VIEW","lat":1.320080126,"lng":103.9109243,"voltage":"6.6KV/LV","zone":"East"},{"name":"SPRINGBROOK TER","lat":1.362213532,"lng":103.9700157,"voltage":"6.6KV/LV","zone":"East"},{"name":"SPRINGLEAF GREEN","lat":1.399418034,"lng":103.8253829,"voltage":"6.6KV/LV","zone":"North"},{"name":"ST ANNE'S WOOD","lat":1.391655638,"lng":103.9031031,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"ST PATRICK'S ROW","lat":1.307964018,"lng":103.9129481,"voltage":"6.6KV/LV","zone":"East"},{"name":"SUMMER PL","lat":1.35671779,"lng":103.8689458,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"SUNNYVALE PASIR PANJANG","lat":1.313886562,"lng":103.9151859,"voltage":"6.6KV/LV","zone":"East"},{"name":"TAI HWAN WALK","lat":1.356653702,"lng":103.8612775,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"TAI KENG PL","lat":1.345188636,"lng":103.885098,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"TAMAN SELAMAT","lat":1.32534825,"lng":103.9145184,"voltage":"6.6KV/LV","zone":"East"},{"name":"TAMAN SIGLAP","lat":1.320223334,"lng":103.9210888,"voltage":"6.6KV/LV","zone":"East"},{"name":"TAMARIND RD","lat":1.389408138,"lng":103.8604755,"voltage":"6.6KV/LV","zone":"North"},{"name":"THIRD AVE","lat":1.328670429,"lng":103.7982099,"voltage":"6.6KV/LV","zone":"Central"},{"name":"THOMSON 800","lat":1.340932899,"lng":103.8376791,"voltage":"6.6KV/LV","zone":"Central"},{"name":"THRIFT DR","lat":1.343930906,"lng":103.8835766,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"TOH DR O/D","lat":1.364490695,"lng":103.9731717,"voltage":"6.6KV/LV","zone":"East"},{"name":"TOH TUCK CLOSE TERRACE","lat":1.338738639,"lng":103.7664729,"voltage":"6.6KV/LV","zone":"West"},{"name":"TOH TUCK TER O/D","lat":1.338802854,"lng":103.7686885,"voltage":"6.6KV/LV","zone":"West"},{"name":"TOH TUCK VILLA","lat":1.33531691,"lng":103.7682077,"voltage":"6.6KV/LV","zone":"West"},{"name":"UPP BEDOK RD","lat":1.329582746,"lng":103.9478656,"voltage":"6.6KV/LV","zone":"East"},{"name":"UPP SERANGOON 7 MS","lat":1.362012168,"lng":103.8869401,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"UPP SERANGOON RD/FLOWER RD","lat":1.358650625,"lng":103.8830011,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"VANDA RD","lat":1.332830526,"lng":103.7993801,"voltage":"6.6KV/LV","zone":"Central"},{"name":"VARSITY PK","lat":1.294495419,"lng":103.7674184,"voltage":"6.6KV/LV","zone":"South"},{"name":"VAUGHAN RD","lat":1.347299103,"lng":103.8710557,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"VICTORIA PK","lat":1.321861956,"lng":103.8029625,"voltage":"6.6KV/LV","zone":"Central"},{"name":"VILLA BEGONIA","lat":1.387530284,"lng":103.860472,"voltage":"6.6KV/LV","zone":"North"},{"name":"WARWICK RD","lat":1.287486862,"lng":103.7979862,"voltage":"6.6KV/LV","zone":"South"},{"name":"WELLINGTON GDN NO 2","lat":1.372315519,"lng":103.8340376,"voltage":"6.6KV/LV","zone":"North"},{"name":"WEST COAST VIEW","lat":1.295535845,"lng":103.7668686,"voltage":"6.6KV/LV","zone":"South"},{"name":"WESTRIDGE","lat":1.277690217,"lng":103.790153,"voltage":"6.6KV/LV","zone":"South"},{"name":"WHITE HSE PK","lat":1.316022096,"lng":103.8224856,"voltage":"6.6KV/LV","zone":"Central"},{"name":"YIO CHU KANG GDN","lat":1.381326965,"lng":103.8367573,"voltage":"6.6KV/LV","zone":"North"},{"name":"YIO CHU KANG TER","lat":1.358610257,"lng":103.8748313,"voltage":"6.6KV/LV","zone":"North-East"},{"name":"YUNNAN GDN NO 1","lat":1.338593513,"lng":103.6897186,"voltage":"6.6KV/LV","zone":"West"}];</script>
+<script type="text/babel">
+const {useState,useMemo,useRef,useEffect} = React;
+
+const ZONES = {
+  "Central":   {color:"var(--z-central)", hex:"#818cf8"},
+  "East":      {color:"var(--z-east)",    hex:"#fbbf24"},
+  "North-East":{color:"var(--z-ne)",      hex:"#34d399"},
+  "North":     {color:"var(--z-north)",   hex:"#f472b6"},
+  "West":      {color:"var(--z-west)",    hex:"#60a5fa"},
+  "South":     {color:"var(--z-south)",   hex:"#fb7185"},
+};
+const ZONE_ORDER = ["Central","East","North-East","North","West","South"];
+const DATA = window.SUBSTATIONS;
+
+function Icon(){return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>;}
+
+function App(){
+  const [q,setQ]=useState("");
+  const [sort,setSort]=useState("name");
+  const [active,setActive]=useState(new Set(ZONE_ORDER));
+  const [sel,setSel]=useState(null);
+  const mapRef=useRef(null); const markersRef=useRef({}); const elRef=useRef(null);
+
+  const counts=useMemo(()=>{const c={};DATA.forEach(d=>c[d.zone]=(c[d.zone]||0)+1);return c;},[]);
+
+  const filtered=useMemo(()=>{
+    let r=DATA.filter(d=>active.has(d.zone));
+    if(q.trim()){const s=q.trim().toLowerCase();r=r.filter(d=>d.name.toLowerCase().includes(s)||d.zone.toLowerCase().includes(s));}
+    r=[...r].sort((a,b)=> sort==="name"?a.name.localeCompare(b.name)
+      : sort==="zone"?(a.zone.localeCompare(b.zone)||a.name.localeCompare(b.name))
+      : sort==="lat"?b.lat-a.lat : a.lng-b.lng);
+    return r;
+  },[q,sort,active]);
+
+  // init map once
+  useEffect(()=>{
+    const map=L.map(elRef.current,{zoomControl:true,attributionControl:true}).setView([1.352,103.84],11.4);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{
+      maxZoom:19,subdomains:"abcd",
+      attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(map);
+    mapRef.current=map;
+    DATA.forEach(d=>{
+      const m=L.circleMarker([d.lat,d.lng],{radius:6,weight:1.5,color:"#0b1119",
+        fillColor:ZONES[d.zone].hex,fillOpacity:.95}).addTo(map);
+      const g="https://www.google.com/maps/search/?api=1&query="+d.lat+","+d.lng;
+      m.bindPopup(
+        '<div class="pop"><h3>'+d.name+'</h3>'+
+        '<div class="prow"><span>Voltage</span><b>'+d.voltage+'</b></div>'+
+        '<div class="prow"><span>Lat</span><b>'+d.lat.toFixed(5)+'</b></div>'+
+        '<div class="prow"><span>Long</span><b>'+d.lng.toFixed(5)+'</b></div>'+
+        '<div class="zbadge"><span class="dot" style="background:'+ZONES[d.zone].hex+'"></span>'+d.zone+' Zone</div>'+
+        '<a class="gmaps" href="'+g+'" target="_blank" rel="noopener">Open in Google Maps</a></div>');
+      m.on("click",()=>setSel(d.name));
+      markersRef.current[d.name]=m;
+    });
+    return ()=>map.remove();
+  },[]);
+
+  // show/hide markers by zone+search
+  useEffect(()=>{
+    const vis=new Set(filtered.map(d=>d.name));
+    Object.entries(markersRef.current).forEach(([nm,m])=>{
+      const on=vis.has(nm); const el=m.getElement();
+      if(el) el.style.display=on?"":"none";
+    });
+  },[filtered]);
+
+  function flyTo(d){const m=mapRef.current;m.flyTo([d.lat,d.lng],16,{duration:.7});
+    setTimeout(()=>markersRef.current[d.name].openPopup(),650);setSel(d.name);}
+  function zoomZone(z){
+    const pts=DATA.filter(d=>d.zone===z);if(!pts.length)return;
+    const b=L.latLngBounds(pts.map(d=>[d.lat,d.lng]));
+    mapRef.current.flyToBounds(b,{padding:[50,50],duration:.7,maxZoom:14.5});
+    setActive(new Set([z]));
+  }
+  function toggleZone(z){const n=new Set(active);n.has(z)?n.delete(z):n.add(z);setActive(n);}
+  function resetView(){mapRef.current.flyTo([1.352,103.84],11.4,{duration:.7});}
+
+  return (
+   <div className="app">
+    <div className="rail">
+      <div className="brand">
+        <h1>SP Grid Atlas</h1>
+        <div className="sub">6.6KV/LV Distribution Substations</div>
+        <div className="stat">
+          <div><b>{DATA.length}</b><span>Substations</span></div>
+          <div><b>{ZONE_ORDER.length}</b><span>Zones</span></div>
+          <div><b>{filtered.length}</b><span>Shown</span></div>
+        </div>
+      </div>
+
+      <div className="controls">
+        <div className="search">
+          <Icon/>
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search substation or zone…"/>
+        </div>
+        <div className="row">
+          <label>Sort</label>
+          <select value={sort} onChange={e=>setSort(e.target.value)}>
+            <option value="name">Name (A–Z)</option>
+            <option value="zone">Zone</option>
+            <option value="lat">Latitude (N→S)</option>
+            <option value="lng">Longitude (W→E)</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="zones">
+        <div className="hd">Operational zones — click to zoom</div>
+        <div className="zgrid">
+          {ZONE_ORDER.map(z=>(
+            <button key={z} className={"zbtn"+(active.has(z)?"":" off")}
+              onClick={()=>zoomZone(z)}
+              onContextMenu={e=>{e.preventDefault();toggleZone(z);}}
+              title="Click: zoom to zone · Right-click: toggle">
+              <span className="dot" style={{background:ZONES[z].hex}}></span>
+              <span className="zn">{z}</span>
+              <span className="zc">{counts[z]||0}</span>
+            </button>
+          ))}
+        </div>
+        <div className="zall">
+          <button onClick={()=>{setActive(new Set(ZONE_ORDER));resetView();}}>Show all</button>
+          <button onClick={()=>setActive(new Set())}>Hide all</button>
+        </div>
+      </div>
+
+      <div className="list">
+        {filtered.length===0 && <div className="empty">No substations match.<br/>Try a different name or switch a zone back on.</div>}
+        {filtered.map(d=>(
+          <div key={d.name} className={"item"+(sel===d.name?" active":"")} onClick={()=>flyTo(d)}>
+            <span className="dot" style={{background:ZONES[d.zone].hex}}></span>
+            <span className="nm">{d.name}</span>
+            <span className="zg">{d.zone}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div className="stage">
+      <div ref={elRef} id="map"></div>
+      <div className="counter"><b>{filtered.length}</b> of {DATA.length} shown</div>
+      <div className="legend">
+        <div className="lt">Zone</div>
+        {ZONE_ORDER.map(z=>(
+          <div className="lr" key={z}><span className="dot" style={{background:ZONES[z].hex}}></span>{z}</div>
+        ))}
+      </div>
+    </div>
+   </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
