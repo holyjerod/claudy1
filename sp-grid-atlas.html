@@ -26,11 +26,13 @@
   @media(max-width:760px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr}.rail{max-height:46vh}}
 
   .rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
-  .brand{padding:24px 20px 20px;border-bottom:1px solid var(--line)}
-  .brand h1{font-family:var(--font-d);font-size:21px;font-weight:600;letter-spacing:-.021em;line-height:1.15}
-  .brand .sub{font-size:13px;color:var(--ink-dim);margin-top:5px;line-height:1.4}
+  .brand{padding:26px 20px 20px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:5;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(20px)}
+  .brand h1{font-family:var(--font-d);font-size:24px;font-weight:600;letter-spacing:-.024em;line-height:1.08}
+  .brand .sub{font-size:13px;color:var(--ink-dim);margin-top:6px;line-height:1.4;letter-spacing:-.008em}
   .stat{display:flex;gap:22px;margin-top:18px}
-  .stat b{font-family:var(--font-d);font-size:22px;font-weight:600;display:block;line-height:1;letter-spacing:-.02em}
+  .stat b{font-family:var(--font-d);font-size:24px;font-weight:600;display:block;line-height:1;
+    letter-spacing:-.022em;font-variant-numeric:tabular-nums}
   .stat span{font-size:12px;color:var(--ink-faint);display:block;margin-top:5px}
 
   .controls{padding:16px 20px;border-bottom:1px solid var(--line)}
@@ -57,7 +59,7 @@
   .zbtn.off{opacity:.4}
   .zbtn .dot{width:10px;height:10px;border-radius:50%;flex:none}
   .zbtn .zn{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .zbtn .zc{font-family:var(--font-m);font-size:11px;color:var(--ink-faint)}
+  .zbtn .zc{font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
   .zall{display:flex;gap:8px;margin-top:10px}
   .zall button{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:980px;color:var(--ink-dim);
     padding:8px;font-size:13px;font-family:var(--font-b);cursor:pointer;transition:background .15s,color .15s}
@@ -79,7 +81,7 @@
   .list{flex:1;overflow-y:auto;min-height:0}
   .list::-webkit-scrollbar{width:10px}
   .list::-webkit-scrollbar-thumb{background:#c7c7cc;border-radius:6px;border:3px solid var(--panel);background-clip:padding-box}
-  .item{padding:13px 20px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:12px;align-items:center;transition:background .12s}
+  .item{padding:14px 20px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;gap:12px;align-items:center;transition:background .12s}
   .item:hover{background:var(--panel2)}
   .item.active{background:var(--panel2);box-shadow:inset 3px 0 0 var(--accent)}
   .item .dot{width:9px;height:9px;border-radius:50%;flex:none}
@@ -128,14 +130,36 @@
   .basemap{position:absolute;right:16px;top:16px;z-index:500;display:flex;gap:5px;padding:5px;
     background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border:1px solid var(--line);
     border-radius:10px;box-shadow:var(--shadow)}
-  .basemap button{background:var(--panel);border:1px solid var(--line);border-radius:980px;padding:6px 15px;
-    font-family:var(--font-b);font-size:12.5px;color:var(--ink-dim);cursor:pointer;transition:.15s}
-  .basemap button:hover{color:var(--ink);background:var(--panel2)}
-  .basemap button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  .basemap button{background:transparent;border:none;border-radius:980px;padding:6px 16px;
+    font-family:var(--font-b);font-size:12.5px;font-weight:500;color:var(--ink-dim);cursor:pointer;transition:.15s}
+  .basemap button:hover:not(.on){color:var(--ink);background:var(--panel2)}
+  .basemap button.on{background:var(--accent);color:var(--accent-ink);box-shadow:var(--shadow)}
 
-  .cl-icon{width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--accent-ink);
-    display:flex;align-items:center;justify-content:center;font-family:var(--font-b);font-size:13px;
-    font-weight:600;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+  .cl-icon{border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-b);font-size:13px;font-weight:600;border:2.5px solid rgba(255,255,255,.92);
+    box-shadow:0 1px 5px rgba(0,0,0,.28)}
+
+  .dscale{display:flex;gap:3px;margin-bottom:6px}
+  .dsw{flex:1;height:12px;border-radius:3px;min-width:22px}
+  .dends{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-faint)}
+
+  .visited{border-bottom:1px solid var(--line);padding:16px 20px 10px;background:var(--panel)}
+  .vhd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .vhd>span{font-size:13px;color:var(--ink-dim)}
+  .seg{display:flex;background:var(--panel2);border-radius:980px;padding:2px}
+  .seg button{border:none;background:transparent;border-radius:980px;padding:4px 11px;
+    font-family:var(--font-b);font-size:11.5px;color:var(--ink-dim);cursor:pointer;transition:.15s}
+  .seg button.on{background:var(--panel);color:var(--ink);font-weight:500;box-shadow:var(--shadow)}
+  .vrow{display:flex;align-items:center;gap:10px;padding:8px 10px;margin:0 -10px;border-radius:10px;
+    cursor:pointer;transition:background .12s}
+  .vrow:hover{background:var(--panel2)}
+  .vrow.active{background:var(--panel2)}
+  .vrow .vn{width:18px;flex:none;font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+  .vrow .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .vrow .nm{flex:1;min-width:0;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vrow .vc{flex:none;font-size:11.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+
+  a.rp-btn{display:block;text-align:center;text-decoration:none;box-sizing:border-box}
 
   /* ── Route Planner ───────────────────────────────────────── */
   .plan{padding:16px 20px 0}
@@ -251,6 +275,7 @@ const ZONES = {
 };
 const ZONE_ORDER = ["Central","East","North-East","North","West","South"];
 const DATA = window.SUBSTATIONS;
+const BY_NAME = Object.fromEntries(DATA.map(d=>[d.name,d]));
 
 const HQ = {name:"SP Group HQ", address:"2 Kallang Sector, Singapore 349277", lat:1.3127, lng:103.8698};
 const MAX_STOPS = 5;
@@ -261,12 +286,42 @@ const BASEMAPS = {
 };
 const BASEMAP_ORDER = ["dark","light"];
 
+// Single-hue SP-red ordinal ramp for cluster density, light -> dark. Both variants
+// pass lightness monotonicity, adjacent-step separation, and the 2:1 floor against
+// their own surface; label ink flips to white where white wins on contrast.
+const DENSITY = {
+  light:[{c:"#fd8883",t:"#1d1d1f"},{c:"#fc454c",t:"#1d1d1f"},{c:"#db132e",t:"#ffffff"},
+         {c:"#ac0c22",t:"#ffffff"},{c:"#7f0616",t:"#ffffff"}],
+  dark: [{c:"#fec8c4",t:"#1d1d1f"},{c:"#fd948e",t:"#1d1d1f"},{c:"#fc4e52",t:"#1d1d1f"},
+         {c:"#da122d",t:"#ffffff"},{c:"#a50b20",t:"#ffffff"}],
+};
+const DENSITY_BINS = [5,10,20,40];          // upper bounds for bins 0..3, rest bin 4
+const DENSITY_LABELS = ["2–4","5–9","10–19","20–39","40+"];
+const densityBin = n => DENSITY_BINS.findIndex(b=>n<b)===-1 ? 4 : DENSITY_BINS.findIndex(b=>n<b);
+
 // Tiles come from an external CDN. Corporate networks and sandboxed viewers often
 // block it, which would otherwise leave a blank map, so failures are reported back
 // and the embedded vector coastline stands in.
 function makeTileLayer(key,onErr,onOk){
   return L.tileLayer(BASEMAPS[key].url,{maxZoom:19,subdomains:"abcd",
     attribution:'&copy; OpenStreetMap &copy; CARTO'}).on("tileerror",onErr).on("tileload",onOk);
+}
+
+// localStorage is unavailable on some file:// and private-window configurations,
+// so visit history degrades to in-memory rather than breaking the app.
+const VISITS_KEY="spGridAtlas.visits";
+function loadVisits(){
+  try{return JSON.parse(localStorage.getItem(VISITS_KEY))||{};}catch(e){return {};}
+}
+function saveVisits(v){
+  try{localStorage.setItem(VISITS_KEY,JSON.stringify(v));}catch(e){}
+}
+function sinceLabel(t){
+  const m=Math.floor((Date.now()-t)/60000);
+  if(m<1) return "just now";
+  if(m<60) return m+"m ago";
+  const h=Math.floor(m/60); if(h<24) return h+"h ago";
+  return Math.floor(h/24)+"d ago";
 }
 
 // Sorting every vertex by its bearing around an interior point always yields a
@@ -300,9 +355,14 @@ function App(){
   const [basemap,setBasemap]=useState("light");
   const [cluster,setCluster]=useState(false);
   const [tilesBlocked,setTilesBlocked]=useState(false);
+  const [copied,setCopied]=useState(false);
+  const [visits,setVisits]=useState(()=>loadVisits());
+  const [visitMode,setVisitMode]=useState("often");
   const mapRef=useRef(null); const markersRef=useRef({}); const elRef=useRef(null);
   const routeLayerRef=useRef(null); const tileRef=useRef(null); const clusterRef=useRef(null);
   const outlineRef=useRef(null);
+  // the cluster icon builder is created once, so it reads the live basemap from a ref
+  const basemapRef=useRef(basemap); basemapRef.current=basemap;
   const canCluster = typeof L.markerClusterGroup === "function";
 
   const counts=useMemo(()=>{const c={};DATA.forEach(d=>c[d.zone]=(c[d.zone]||0)+1);return c;},[]);
@@ -332,15 +392,21 @@ function App(){
         '<div class="prow"><span>Long</span><b>'+d.lng.toFixed(5)+'</b></div>'+
         '<div class="zbadge"><span class="dot" style="background:'+ZONES[d.zone].hex+'"></span>'+d.zone+' Zone</div>'+
         '<a class="gmaps" href="'+g+'" target="_blank" rel="noopener">Open in Google Maps</a></div>');
-      m.on("click",()=>setSel(d.name));
+      m.on("click",()=>{setSel(d.name);recordVisit(d.name);});
       markersRef.current[d.name]=m;
     });
     routeLayerRef.current=L.layerGroup().addTo(map);
     if(canCluster){
       clusterRef.current=L.markerClusterGroup({
         showCoverageOnHover:false, maxClusterRadius:60, chunkedLoading:true,
-        iconCreateFunction:c=>L.divIcon({className:"",iconSize:[38,38],
-          html:'<div class="cl-icon">'+c.getChildCount()+'</div>'})
+        iconCreateFunction:c=>{
+          const n=c.getChildCount(), b=densityBin(n);
+          const {c:fill,t:ink}=DENSITY[basemapRef.current][b];
+          const size=34+b*5;
+          return L.divIcon({className:"",iconSize:[size,size],
+            html:'<div class="cl-icon" style="width:'+size+'px;height:'+size+'px;background:'+fill+
+                 ';color:'+ink+'">'+n+'</div>'});
+        }
       });
     }
     return ()=>map.remove();
@@ -351,6 +417,7 @@ function App(){
     const map=mapRef.current; if(!map||!tileRef.current) return;
     map.removeLayer(tileRef.current);
     tileRef.current=makeTileLayer(basemap,()=>setTilesBlocked(true),()=>setTilesBlocked(false)).addTo(map);
+    if(clusterRef.current&&map.hasLayer(clusterRef.current)) clusterRef.current.refreshClusters();
   },[basemap]);
 
   // vector coastline fallback, shown only when the tile CDN is unreachable
@@ -418,10 +485,25 @@ function App(){
     setStops(angularSweepRoute(HQ,stops));
     setFlash(true); setTimeout(()=>setFlash(false),700);
   }
-  function openInGoogleMaps(){
-    if(!stops.length) return;
-    const path=[HQ,...stops,HQ].map(p=>p.lat+","+p.lng).join("/");
-    window.open("https://www.google.com/maps/dir/"+path,"_blank","noopener");
+  // 6dp is ~0.1m and matches the precision Google itself normalises a /dir/ URL to
+  const routeUrl=useMemo(()=>{
+    if(!stops.length) return "";
+    return "https://www.google.com/maps/dir/"+
+      [HQ,...stops,HQ].map(p=>p.lat.toFixed(6)+","+p.lng.toFixed(6)).join("/");
+  },[stops]);
+
+  function copyRouteLink(){
+    if(!routeUrl) return;
+    const done=()=>{setCopied(true);setTimeout(()=>setCopied(false),1600);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(routeUrl).then(done,()=>fallbackCopy(routeUrl,done));
+    }else fallbackCopy(routeUrl,done);
+  }
+  function fallbackCopy(text,done){
+    const ta=document.createElement("textarea");
+    ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");done();}finally{document.body.removeChild(ta);}
   }
   function clearRoute(){setStops([]);setRq("");}
   function exitRoute(){setRouteMode(false);setStops([]);setRq("");}
@@ -450,7 +532,22 @@ function App(){
     }
   },[filtered,cluster]);
 
-  function flyTo(d){const m=mapRef.current;const mk=markersRef.current[d.name];
+  function recordVisit(name){
+    setVisits(prev=>{
+      const cur=prev[name]||{n:0,t:0};
+      const next={...prev,[name]:{n:cur.n+1,t:Date.now()}};
+      saveVisits(next); return next;
+    });
+  }
+
+  const topVisited=useMemo(()=>{
+    const rows=Object.entries(visits).map(([name,v])=>({d:BY_NAME[name],...v}))
+      .filter(r=>r.d);
+    rows.sort(visitMode==="often" ? (a,b)=>b.n-a.n||b.t-a.t : (a,b)=>b.t-a.t);
+    return rows.slice(0,5);
+  },[visits,visitMode]);
+
+  function flyTo(d){const m=mapRef.current;const mk=markersRef.current[d.name];recordVisit(d.name);
     if(cluster&&clusterRef.current&&clusterRef.current.hasLayer(mk)){
       setSel(d.name);clusterRef.current.zoomToShowLayer(mk,()=>mk.openPopup());return;}
     m.flyTo([d.lat,d.lng],16,{duration:.7});
@@ -541,7 +638,12 @@ function App(){
 
         <div className="rp-act">
           <button className="rp-btn ghost" disabled={stops.length<2} onClick={optimiseRoute}>Optimise route</button>
-          <button className="rp-btn primary" disabled={stops.length<1} onClick={openInGoogleMaps}>Open in Google Maps →</button>
+          {stops.length
+            ? <a className="rp-btn primary" href={routeUrl} target="_blank" rel="noopener noreferrer">Open in Google Maps →</a>
+            : <button className="rp-btn primary" disabled>Open in Google Maps →</button>}
+          <button className="rp-btn quiet" disabled={!stops.length} onClick={copyRouteLink}>
+            {copied?"Link copied":"Copy route link"}
+          </button>
           <button className="rp-btn quiet" onClick={clearRoute}>Clear route</button>
         </div>
       </div>
@@ -591,6 +693,25 @@ function App(){
         </button>
       </div>
 
+      {topVisited.length>0 && (
+      <div className="visited">
+        <div className="vhd">
+          <span>Pinned sites</span>
+          <div className="seg">
+            <button className={visitMode==="often"?"on":""} onClick={()=>setVisitMode("often")}>Most visited</button>
+            <button className={visitMode==="recent"?"on":""} onClick={()=>setVisitMode("recent")}>Recent</button>
+          </div>
+        </div>
+        {topVisited.map((r,i)=>(
+          <div key={r.d.name} className={"vrow"+(sel===r.d.name?" active":"")} onClick={()=>flyTo(r.d)}>
+            <span className="vn">{i+1}</span>
+            <span className="dot" style={{background:ZONES[r.d.zone].hex}}></span>
+            <span className="nm">{r.d.name}</span>
+            <span className="vc">{visitMode==="often"?r.n+(r.n===1?" visit":" visits"):sinceLabel(r.t)}</span>
+          </div>
+        ))}
+      </div>)}
+
       <div className="list">
         {filtered.length===0 && <div className="empty">No substations match.<br/>Try a different name or switch a zone back on.</div>}
         {filtered.map(d=>(
@@ -615,10 +736,20 @@ function App(){
       </div>
       <div className="counter"><b>{filtered.length}</b> of {DATA.length} shown</div>
       <div className="legend">
-        <div className="lt">Zone</div>
-        {ZONE_ORDER.map(z=>(
-          <div className="lr" key={z}><span className="dot" style={{background:ZONES[z].hex}}></span>{z}</div>
-        ))}
+        {cluster ? (<>
+          <div className="lt">Substation density</div>
+          <div className="dscale">
+            {DENSITY[basemap].map((s,i)=>(
+              <span key={i} className="dsw" style={{background:s.c}} title={DENSITY_LABELS[i]+" substations"}></span>
+            ))}
+          </div>
+          <div className="dends"><span>Fewer</span><span>More</span></div>
+        </>) : (<>
+          <div className="lt">Zone</div>
+          {ZONE_ORDER.map(z=>(
+            <div className="lr" key={z}><span className="dot" style={{background:ZONES[z].hex}}></span>{z}</div>
+          ))}
+        </>)}
       </div>
     </div>
    </div>
